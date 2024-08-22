@@ -261,7 +261,7 @@ for epoch in range(1,EPOCH_NUMBER+1):
         actual, predicted = eval_for_confmat(validation_loader, model = model)
         confmat = comp_confmat(actual, predicted)
         plot_confusion_matrix(confmat, f"{png_header}_{epoch}.png")
-
+        model.train()
 
 
 fig, ax = plt.subplots(1, 2, figsize=(12, 6))

@@ -1,0 +1,13 @@
+executable = /home/sthoma31/neutrino_interaction_images/train_nn/singularity_wrapper.sh
+arguments  = /home/sthoma31/v14_latest.sif /home/sthoma31/neutrino_interaction_images/train_nn/train_nn.py --training_data_size 4000 --png_header trialrun
+output     = run_images.out
+error      = run_images.err
+log        = run_images.log
+getenv     = True
+
+request_cpus   = 4
+request_memory = 8 GB
+
+Requirements = TARGET.vm_name == "its-u20-nfs-20210413"
+
+queue 

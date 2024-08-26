@@ -46,11 +46,11 @@ plot_frequency = 1
 
 parser = argparse.ArgumentParser(description='Train a convolutional neural network for neutrino interactions. ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--seed", type = int, default = 5, help = "Set random seed")
-parser.add_argument("--image_dir", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES", help = "Location that contains interaction folders CC and NC")
-parser.add_argument("--cc_folder", type = str, default = "CC1", help = "Name of folder containing CC interactions")
-parser.add_argument("--nc_folder", type = str, default = "NC1", help = "Name of folder containing NC interactions")
+#parser.add_argument("--image_dir", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES", help = "Location that contains interaction folders CC and NC")
+parser.add_argument("--cc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/CC1", nargs='*', help = "Name of folder containing CC interactions")
+parser.add_argument("--nc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/NC1", nargs='*', help = "Name of folder containing NC interactions")
 parser.add_argument("--batch_size", type = int, default = 128, help = "Batch size when training")
-parser.add_argument("--training_data_size", type = int, default = 4000, help = "Size of training data")
+#parser.add_argument("--training_data_size", type = int, default = 4000, help = "Size of training data")
 parser.add_argument("--epoch", type = int, default = 20, help = "Number of epochs when training")
 parser.add_argument("--testing_data_size", type = int, default = 100, help = "Size of testing data for each channel ")
 parser.add_argument("--png_header", type = str, default = "trial", help = "Header name for PNG files")
@@ -58,10 +58,10 @@ parser.add_argument("--plot_freq", type = int, default = 5, help = "Plot confusi
 
 args = parser.parse_args()
 torch.manual_seed(args.seed)
-IMAGE_LOC = args.image_dir
+#IMAGE_LOC = args.image_dir
 BATCH_SIZE = args.batch_size
 EPOCH_NUMBER = args.epoch
-datasize = args.training_data_size
+#datasize = args.training_data_size
 testsize_per_channel = args.testing_data_size
 png_header = args.png_header
 plot_frequency = args.plot_freq
@@ -98,16 +98,20 @@ label_map = {0:"NC",
              1:"CC"
             }
 
-for nc_path in glob(f"{IMAGE_LOC}/{args.nc_folder}/*"):
-    pathNC.append(nc_path)
-    labelNC.append(0)
+for myfilepath in args.nc_folder:
+    for nc_path in glob(f"{myfilepath}/*"):
+        pathNC.append(nc_path)
+        labelNC.append(0)
 
-for cc_path in glob(f"{IMAGE_LOC}/{args.cc_folder}/*"):
-    pathCC.append(cc_path)
-    labelCC.append(1)
+for myfilepath in args.cc_folder:
+    for cc_path in glob(f"{myfilepath}/*"):
+        pathCC.append(cc_path)
+        labelCC.append(1)
     
-print(len(pathNC), len(labelNC))
-print(len(pathCC), len(labelCC))
+print("Real NC lengths are ", len(pathNC), len(labelNC))
+print("Real CC lengths are ", len(pathCC), len(labelCC))
+datasize = len(pathNC) - testsize_per_channel
+print(f"Maximum length is: {datasize}")
 
 paths = pathNC[0:datasize] + pathCC[0:datasize]
 labels = labelNC[0:datasize] + labelCC[0:datasize]
@@ -122,7 +126,6 @@ labels_test = labelNC[datasize + 1:datasize + 1 + testsize_per_channel] + labelC
 test_dataset = CustomDataset(paths_test, labels_test, (250,250))
 validation_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE,
                                                 shuffle=True)
-
 
 
 class Flatten(torch.nn.Module):

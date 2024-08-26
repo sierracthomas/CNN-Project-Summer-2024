@@ -47,7 +47,7 @@ def plot_confusion_matrix(confusion_matrix, savepic):
 
 
     ax = sn.heatmap(df_cm, annot=True,cmap="OrRd")
-    ax.set(xlabel="Truth", ylabel="Predicted")
+    ax.set(xlabel="Predicted", ylabel="Truth")
     plt.suptitle("Confusion matrix of model on 10,000 tests")
     ax.xaxis.tick_top()
     plt.savefig(savepic)

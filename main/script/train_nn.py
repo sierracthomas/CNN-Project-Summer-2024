@@ -46,16 +46,18 @@ plot_frequency = 1
 
 parser = argparse.ArgumentParser(description='Train a convolutional neural network for neutrino interactions. ', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--seed", type = int, default = 5, help = "Set random seed")
-#parser.add_argument("--image_dir", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES", help = "Location that contains interaction folders CC and NC")
-parser.add_argument("--cc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/CC1", nargs='*', help = "Name of folder containing CC interactions")
-parser.add_argument("--nc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/NC1", nargs='*', help = "Name of folder containing NC interactions")
+#parser.add_argument("--image_dir", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES", nargs='*', help = "Location that contains interaction folders CC and NC")
+parser.add_argument("--numucc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/CC1", nargs='*', help = "Name of folder containing Nu_mu CC interactions")
+parser.add_argument("--numunc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/NC1", nargs='*', help = "Name of folder containing NC interactions")
+parser.add_argument("--nuenc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/NC1", nargs='*', help = "Name of folder containing NC interactions")
+parser.add_argument("--nuecc_folder", type = str, default = "/home/sthoma31/neutrino_interaction_images/nu_mu_700/data/QES/CC1", nargs='*', help = "Name of folder containing Nu_e CC interactions")
 parser.add_argument("--batch_size", type = int, default = 128, help = "Batch size when training")
 #parser.add_argument("--training_data_size", type = int, default = 4000, help = "Size of training data")
 parser.add_argument("--epoch", type = int, default = 20, help = "Number of epochs when training")
 parser.add_argument("--testing_data_size", type = int, default = 100, help = "Size of testing data for each channel ")
 parser.add_argument("--png_header", type = str, default = "trial", help = "Header name for PNG files")
 parser.add_argument("--plot_freq", type = int, default = 5, help = "Plot confusion matrices every {plot_freq} times")
-
+parser.add_argument("--model_name", type = str, default = "./recent.pt", help = "Name of model to save as")
 args = parser.parse_args()
 torch.manual_seed(args.seed)
 #IMAGE_LOC = args.image_dir
@@ -89,43 +91,72 @@ class CustomDataset(Dataset):
 pathNC = []
 labelNC = []
 
-pathCC = []
-labelCC = []
+pathmCC = []
+labelmCC = []
+
+patheCC = []
+labeleCC = []
 
 paths, labels = [], []
 
 label_map = {0:"NC",
-             1:"CC"
+             1:"NUMUCC",
+             2:"NUECC"
             }
 
-for myfilepath in args.nc_folder:
+numunc_temp = []
+nuenc_temp = []
+
+for myfilepath in args.numunc_folder:
     for nc_path in glob(f"{myfilepath}/*"):
-        pathNC.append(nc_path)
+        numunc_temp.append(nc_path)
         labelNC.append(0)
 
-for myfilepath in args.cc_folder:
+for myfilepath in args.nuenc_folder:
+    for nc_path in glob(f"{myfilepath}/*"):
+        nuenc_temp.append(nc_path)
+        labelNC.append(0)
+numunc_len = len(numunc_temp)
+nuenc_len = len(nuenc_temp)
+
+# take half of NueNC and NumuNC and combine 
+true_length = min(numunc_len, nuenc_len)
+labelNC = labelNC[:2 * true_length]
+pathNC = numunc_temp[:true_length] + nuenc_temp[:true_length]
+
+
+for myfilepath in args.numucc_folder:
     for cc_path in glob(f"{myfilepath}/*"):
-        pathCC.append(cc_path)
-        labelCC.append(1)
+        pathmCC.append(cc_path)
+        labelmCC.append(1)
+
+for myfilepath in args.nuecc_folder:
+    for cc_path in glob(f"{myfilepath}/*"):
+        patheCC.append(cc_path)
+        labeleCC.append(2)
     
 print("Real NC lengths are ", len(pathNC), len(labelNC))
-print("Real CC lengths are ", len(pathCC), len(labelCC))
-datasize = len(pathNC) - testsize_per_channel
+print("Real Nu_mu CC lengths are ", len(pathmCC), len(labelmCC))
+print("Real Nu_e CC lengths are ", len(patheCC), len(labeleCC))
+datasize = min(len(pathmCC), len(patheCC), len(pathNC)) - testsize_per_channel
 print(f"Maximum length is: {datasize}")
 
-paths = pathNC[0:datasize] + pathCC[0:datasize]
-labels = labelNC[0:datasize] + labelCC[0:datasize]
+paths = pathNC[0:datasize] + patheCC[0:datasize] + pathmCC[0:datasize]
+labels = labelNC[0:datasize] + labeleCC[0:datasize] + labelmCC[0:datasize]
 dataset = CustomDataset(paths,labels,(250,250))
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, 
                                            shuffle=True)
 
 
-paths_test = pathNC[datasize + 1: datasize + 1 + testsize_per_channel] + pathCC[datasize + 1:datasize + 1 + testsize_per_channel]
-labels_test = labelNC[datasize + 1:datasize + 1 + testsize_per_channel] + labelCC[datasize + 1:datasize + 1 + testsize_per_channel]
+paths_test = pathNC[datasize + 1: datasize + 1 + testsize_per_channel] + patheCC[datasize + 1:datasize + 1 + testsize_per_channel] + pathmCC[datasize + 1:datasize + 1 + testsize_per_channel]
+labels_test = labelNC[datasize + 1:datasize + 1 + testsize_per_channel] + labeleCC[datasize + 1:datasize + 1 + testsize_per_channel] + labelmCC[datasize + 1:datasize + 1 + testsize_per_channel]
+
+print(paths_test, labels_test)
 
 test_dataset = CustomDataset(paths_test, labels_test, (250,250))
 validation_loader = torch.utils.data.DataLoader(test_dataset, batch_size=BATCH_SIZE,
                                                 shuffle=True)
+
 
 
 class Flatten(torch.nn.Module):
@@ -148,7 +179,7 @@ model = nn.Sequential(nn.Conv2d(1,32,kernel_size=3,stride=2,padding=1),
                             Flatten(),
                               #nn.Unflatten(1, (-1, 256 * 2 * 2)), #x = x.view(-1, 256 * 2 * 2)
                             nn.Linear(256 * 2 * 2,512),
-                            nn.Linear(512,2),
+                            nn.Linear(512,3),
                             nn.LogSoftmax(dim=1))
 
 def eval_for_confmat(validation_loader, model = model):
@@ -204,14 +235,14 @@ def comp_confmat(actual, predicted):
 
 
 def plot_confusion_matrix(confusion_matrix, savepic):
-    df_cm = pd.DataFrame(confusion_matrix, index = [i for i in ['CC', 'NC']],
-                  columns = [i for i in ['CC', 'NC']])
+    df_cm = pd.DataFrame(confusion_matrix, index = [i for i in ['NC', 'NU_MU_CC', 'NU_E_CC']],
+                  columns = [i for i in ['NC', 'NU_MU_CC', 'NU_E_CC']])
     plt.figure(figsize = (10,7))
 
 
     ax = sn.heatmap(df_cm, annot=True,cmap="OrRd")
     ax.set(ylabel="Truth", xlabel="Predicted")
-    plt.suptitle(f"Confusion matrix of model on {np.sum(confusion_matrix)} tests")
+    plt.suptitle(f"Confusion matrix of model on {int(np.sum(confusion_matrix))} tests")
     ax.xaxis.tick_top()
     plt.savefig(savepic)
     plt.show()
@@ -264,6 +295,7 @@ for epoch in range(1,EPOCH_NUMBER+1):
         actual, predicted = eval_for_confmat(validation_loader, model = model)
         confmat = comp_confmat(actual, predicted)
         plot_confusion_matrix(confmat, f"{png_header}_{epoch}.png")
+        torch.save(model, f"./epoch_{epoch}.pt")
         model.train()
 
 
@@ -294,3 +326,4 @@ for i, ax in enumerate(axis.flat):
 
 torch.random.initial_seed()
 
+torch.save(model, args.model_name)

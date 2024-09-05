@@ -1,5 +1,5 @@
-executable = /home/sthoma31/neutrino_interaction_images/train_nn/singularity_wrapper.sh
-arguments  = /home/sthoma31/v14_latest.sif /home/sthoma31/neutrino_interaction_images/train_nn/train_nn.py --training_data_size 4000 --png_header trialrun
+executable = /home/sthoma31/neutrino_interaction_images/train_nn/three_classes/singularity_wrapper.sh
+arguments  = /home/sthoma31/v14_latest.sif /home/sthoma31/neutrino_interaction_images/train_nn/three_classes/train_nn.py --nuecc_folder /home/sthoma31/neutrino_interaction_images/nu_e/data/QES/CC1 --numucc_folder /home/sthoma31/neutrino_interaction_images/nu_mu_700_1/data/QES/CC2 --nuenc_folder /home/sthoma31/neutrino_interaction_images/nu_e/data/QES/NC1 --numunc_folder /home/sthoma31/neutrino_interaction_images/nu_mu_700_1/data/QES/NC2 /home/sthoma31/neutrino_interaction_images/nu_mu_700_1/data/QES/NC4 --epoch 100 --testing_data_size 200 --plot_freq 5
 output     = run_images.out
 error      = run_images.err
 log        = run_images.log
